@@ -85,7 +85,7 @@ export function SettingsPanel({
               value={[options.quality]}
               onValueChange={([v]) => onChange({ ...options, quality: v ?? 80 })}
               min={1}
-              max={100}
+              max={99}
               step={1}
               disabled={disabled}
               className="py-1.5"

@@ -1,5 +1,5 @@
 import { formatBytes } from "@/lib/utils";
-import { FileDown, HardDrive, Sparkles } from "lucide-react";
+import { FileDown, HardDrive, Sparkles, TrendingUp } from "lucide-react";
 
 interface StatsBarProps {
   count: number;
@@ -44,18 +44,24 @@ export function StatsBar({
             className={
               reduced
                 ? "flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                : "flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
+                : "flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400"
             }
           >
-            <FileDown className="size-4" />
+            {reduced ? (
+              <FileDown className="size-4" />
+            ) : (
+              <TrendingUp className="size-4" />
+            )}
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Total saved</p>
+            <p className="text-xs text-muted-foreground">
+              {reduced ? "Total saved" : "Size increase"}
+            </p>
             <p
               className={
                 reduced
                   ? "truncate text-sm font-semibold text-emerald-600 dark:text-emerald-400"
-                  : "truncate text-sm font-semibold"
+                  : "truncate text-sm font-semibold text-amber-600 dark:text-amber-400"
               }
             >
               {formatBytes(Math.abs(saved))}

@@ -16,6 +16,7 @@ import {
   Check,
   ArrowRight,
   Minus,
+  TrendingUp,
 } from "lucide-react";
 
 interface ImageCardProps {
@@ -77,9 +78,14 @@ export function ImageCard({ item, onRemove, onImageClick }: ImageCardProps) {
                 <Minus className="size-3" />
                 Already optimal
               </span>
-            ) : (
+            ) : savings.saved > 0 ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/95 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
                 <Check className="size-3" />
+                {formatPercent(savings.percent)}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/95 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+                <TrendingUp className="size-3" />
                 {formatPercent(savings.percent)}
               </span>
             )}
@@ -123,7 +129,14 @@ export function ImageCard({ item, onRemove, onImageClick }: ImageCardProps) {
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span>{formatBytes(result.originalSize)}</span>
             <ArrowRight className="size-3 shrink-0" />
-            <span className="font-medium text-foreground">
+            <span
+              className={cn(
+                "font-medium",
+                savings && savings.saved < 0
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-foreground"
+              )}
+            >
               {formatBytes(result.blob.size)}
             </span>
             <span className="ml-auto tabular-nums">
