@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   type ProcessOptions,
   type ProcessResult,
@@ -108,16 +108,42 @@ export function useImageOptimizer() {
     setIsProcessing(false);
   }, [items, options]);
 
-  const processedImages: ProcessedImage[] = items
-    .filter((i): i is ImageItem & { result: ProcessResult } => i.status === "done" && !!i.result)
-    .map((i) => ({
-      file: i.file,
-      blob: i.result!.blob,
-      width: i.result!.width,
-      height: i.result!.height,
-      originalWidth: i.result!.originalWidth,
-      originalHeight: i.result!.originalHeight,
-    }));
+  const processedImages: ProcessedImage[] = useMemo(
+    () =>
+      items
+        .filter(
+          (i): i is ImageItem & { result: ProcessResult } =>
+            i.status === "done" && !!i.result
+        )
+        .map((i) => ({
+          file: i.file,
+          blob: i.result.blob,
+          outputExtension: i.result.outputExtension,
+          width: i.result.width,
+          height: i.result.height,
+          originalWidth: i.result.originalWidth,
+          originalHeight: i.result.originalHeight,
+        })),
+    [items]
+  );
+
+  const stats = useMemo(() => {
+    let originalBytes = 0;
+    let optimizedBytes = 0;
+    for (const img of processedImages) {
+      originalBytes += img.file.size;
+      optimizedBytes += img.blob.size;
+    }
+    const saved = originalBytes - optimizedBytes;
+    const percent = originalBytes > 0 ? (saved / originalBytes) * 100 : 0;
+    return {
+      count: processedImages.length,
+      originalBytes,
+      optimizedBytes,
+      saved,
+      percent,
+    };
+  }, [processedImages]);
 
   const hasPending = items.some((i) => i.status === "pending");
   const hasProcessed = processedImages.length > 0;
@@ -134,6 +160,7 @@ export function useImageOptimizer() {
     isProcessing,
     progress,
     processedImages,
+    stats,
     hasPending,
     hasProcessed,
     allDone,

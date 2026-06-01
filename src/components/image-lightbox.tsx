@@ -6,19 +6,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { ImageItem } from "@/hooks/use-image-optimizer";
-import { cn } from "@/lib/utils";
+import { cn, formatBytes, formatPercent, getSavings } from "@/lib/utils";
 import { GripVertical } from "lucide-react";
 
 interface ImageLightboxProps {
   item: ImageItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 export function ImageLightbox({
@@ -91,10 +85,34 @@ export function ImageLightbox({
         <div className="flex flex-col gap-4 px-6 pb-6">
           {hasResult && resultUrl ? (
             <>
-              <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                <span>Before: {formatBytes(item.file.size)}</span>
-                <span className="h-px flex-1 bg-border" aria-hidden />
-                <span>After: {formatBytes(item.result!.blob.size)}</span>
+              <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+                <span className="text-muted-foreground">
+                  Before:{" "}
+                  <span className="font-medium text-foreground">
+                    {formatBytes(item.result!.originalSize)}
+                  </span>
+                </span>
+                <span className="text-muted-foreground">
+                  After:{" "}
+                  <span className="font-medium text-foreground">
+                    {formatBytes(item.result!.blob.size)}
+                  </span>
+                </span>
+                {(() => {
+                  const s = getSavings(
+                    item.result!.originalSize,
+                    item.result!.blob.size
+                  );
+                  return item.result!.keptOriginal ? (
+                    <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+                      Already optimal
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-emerald-500/95 px-2 py-0.5 font-semibold text-white">
+                      {formatPercent(s.percent)}
+                    </span>
+                  );
+                })()}
               </div>
               <div
                 ref={containerRef}

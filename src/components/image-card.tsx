@@ -1,5 +1,3 @@
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -9,143 +7,156 @@ import {
 } from "@/components/ui/tooltip";
 import type { ImageItem } from "@/hooks/use-image-optimizer";
 import { downloadSingle } from "@/lib/download";
-import type { OutputFormat } from "@/lib/image-processor";
-import { cn } from "@/lib/utils";
-import { Loader2, Trash2, Download, AlertCircle } from "lucide-react";
+import { cn, formatBytes, formatPercent, getSavings } from "@/lib/utils";
+import {
+  Loader2,
+  Trash2,
+  Download,
+  AlertCircle,
+  Check,
+  ArrowRight,
+  Minus,
+} from "lucide-react";
 
 interface ImageCardProps {
   item: ImageItem;
-  format: OutputFormat;
   onRemove: (id: string) => void;
   onImageClick?: (item: ImageItem) => void;
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-}
-
-export function ImageCard({
-  item,
-  format,
-  onRemove,
-  onImageClick,
-}: ImageCardProps) {
-  const statusVariant =
-    item.status === "done"
-      ? "default"
-      : item.status === "error"
-        ? "destructive"
-        : item.status === "processing"
-          ? "secondary"
-          : "outline";
-
-  const sizeInfo =
-    item.status === "done" && item.result
-      ? `${formatBytes(item.file.size)} → ${formatBytes(item.result.blob.size)}`
-      : `${formatBytes(item.file.size)}`;
+export function ImageCard({ item, onRemove, onImageClick }: ImageCardProps) {
+  const { status, result } = item;
+  const isDone = status === "done" && result;
+  const savings = isDone ? getSavings(result.originalSize, result.blob.size) : null;
+  const clickable = onImageClick && status !== "processing";
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <span className="truncate text-sm font-medium" title={item.file.name}>
-          {item.file.name}
-        </span>
-        <div className="flex items-center gap-1">
+    <div className="group relative flex flex-col overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-md">
+      {/* Image / preview */}
+      <div
+        className={cn(
+          "relative aspect-square w-full overflow-hidden bg-muted",
+          clickable && "cursor-zoom-in"
+        )}
+        onClick={() => clickable && onImageClick?.(item)}
+        onKeyDown={(e) => {
+          if (clickable && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            onImageClick?.(item);
+          }
+        }}
+        role={clickable ? "button" : undefined}
+        tabIndex={clickable ? 0 : undefined}
+        aria-label={clickable ? `Compare ${item.file.name}` : undefined}
+      >
+        {status === "processing" ? (
+          <div className="flex size-full items-center justify-center">
+            <Loader2 className="size-7 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <img
+            src={item.previewUrl}
+            alt={item.file.name}
+            loading="lazy"
+            className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        )}
+
+        {status === "error" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-destructive/15 backdrop-blur-[1px]">
+            <AlertCircle className="size-7 text-destructive" />
+            <span className="text-xs font-medium text-destructive">Failed</span>
+          </div>
+        )}
+
+        {/* Savings badge */}
+        {isDone && savings && (
+          <div className="absolute left-2 top-2">
+            {result.keptOriginal ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground shadow-sm ring-1 ring-border backdrop-blur">
+                <Minus className="size-3" />
+                Already optimal
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/95 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+                <Check className="size-3" />
+                {formatPercent(savings.percent)}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Remove button */}
+        <div className="absolute right-2 top-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="icon"
-                  className="size-8 shrink-0"
-                  onClick={() => onRemove(item.id)}
-                  aria-label="Remove"
+                  className="size-7 rounded-full bg-background/90 shadow-sm backdrop-blur hover:bg-background"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(item.id);
+                  }}
+                  aria-label="Remove image"
                 >
-                  <Trash2 className="size-4" />
+                  <Trash2 className="size-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Remove</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div
-          className={cn(
-            "relative aspect-square w-full bg-muted",
-            onImageClick &&
-              item.status !== "processing" &&
-              "cursor-pointer hover:opacity-90"
-          )}
-          onClick={() => onImageClick?.(item)}
-          onKeyDown={(e) => {
-            if (
-              onImageClick &&
-              item.status !== "processing" &&
-              (e.key === "Enter" || e.key === " ")
-            ) {
-              e.preventDefault();
-              onImageClick(item);
-            }
-          }}
-          role={onImageClick && item.status !== "processing" ? "button" : undefined}
-          tabIndex={onImageClick && item.status !== "processing" ? 0 : undefined}
+      </div>
+
+      {/* Meta */}
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <p
+          className="truncate text-sm font-medium leading-tight"
+          title={item.file.name}
         >
-          {item.status === "processing" ? (
-            <div className="flex size-full items-center justify-center">
-              <Loader2 className="size-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <img
-              src={item.previewUrl}
-              alt={item.file.name}
-              className="size-full object-contain"
-            />
-          )}
-          {item.status === "error" && (
-            <div className="absolute inset-0 flex items-center justify-center bg-destructive/10">
-              <AlertCircle className="size-8 text-destructive" />
-            </div>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2 p-2">
-          <Badge variant={statusVariant} className="text-xs">
-            {item.status}
-          </Badge>
-          <span className="text-xs text-muted-foreground">{sizeInfo}</span>
-        </div>
-      </CardContent>
-      {item.status === "done" && item.result && (
-        <CardFooter className="p-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() =>
-                    downloadSingle(item.result!.blob, item.file.name, format)
-                  }
-                >
-                  <Download className="mr-2 size-4" />
-                  Download
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Download optimized image</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </CardFooter>
-      )}
-      {item.status === "error" && item.error && (
-        <CardFooter className="p-2">
-          <p className="text-xs text-destructive" title={item.error}>
-            {item.error}
+          {item.file.name}
+        </p>
+
+        {isDone ? (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>{formatBytes(result.originalSize)}</span>
+            <ArrowRight className="size-3 shrink-0" />
+            <span className="font-medium text-foreground">
+              {formatBytes(result.blob.size)}
+            </span>
+            <span className="ml-auto tabular-nums">
+              {result.width}&times;{result.height}
+            </span>
+          </div>
+        ) : status === "error" ? (
+          <p className="truncate text-xs text-destructive" title={item.error}>
+            {item.error ?? "Could not process this image"}
           </p>
-        </CardFooter>
-      )}
-    </Card>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>{formatBytes(item.file.size)}</span>
+            <span className="ml-auto capitalize">
+              {status === "processing" ? "Optimizing\u2026" : "Pending"}
+            </span>
+          </div>
+        )}
+
+        {isDone && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-auto w-full"
+            onClick={() =>
+              downloadSingle(result.blob, item.file.name, result.outputExtension)
+            }
+          >
+            <Download className="mr-2 size-4" />
+            Download
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }

@@ -1,11 +1,10 @@
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
-import type { OutputFormat } from "./image-processor";
-import { getOutputExtension } from "./image-processor";
 
 export interface ProcessedImage {
   file: File;
   blob: Blob;
+  outputExtension: string;
   width: number;
   height: number;
   originalWidth: number;
@@ -13,34 +12,38 @@ export interface ProcessedImage {
 }
 
 /**
- * Download a single processed image.
+ * Download a single processed image, using the extension chosen for that result.
  */
 export function downloadSingle(
   blob: Blob,
   originalFileName: string,
-  format: OutputFormat
+  outputExtension: string
 ): void {
   const baseName = originalFileName.replace(/\.[^.]+$/, "");
-  const ext = getOutputExtension(format);
-  const fileName = `${baseName}${ext}`;
+  const fileName = `${baseName}${outputExtension}`;
   saveAs(blob, fileName);
 }
 
 /**
- * Download multiple processed images as a ZIP file.
+ * Download multiple processed images as a ZIP file. Each image keeps its own
+ * output extension (some may have been preserved in their original format).
  */
 export async function downloadAsZip(
   images: ProcessedImage[],
-  format: OutputFormat,
   zipFileName = "optimized-images.zip"
 ): Promise<void> {
   const zip = new JSZip();
-  const ext = getOutputExtension(format);
+  const usedNames = new Set<string>();
 
-  for (let i = 0; i < images.length; i++) {
-    const { file, blob } = images[i];
+  for (const { file, blob, outputExtension } of images) {
     const baseName = file.name.replace(/\.[^.]+$/, "");
-    const name = images.length > 1 ? `${baseName}-${i + 1}${ext}` : `${baseName}${ext}`;
+    let name = `${baseName}${outputExtension}`;
+    let counter = 1;
+    while (usedNames.has(name)) {
+      name = `${baseName}-${counter}${outputExtension}`;
+      counter++;
+    }
+    usedNames.add(name);
     zip.file(name, blob);
   }
 

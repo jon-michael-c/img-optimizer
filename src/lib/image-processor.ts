@@ -8,10 +8,20 @@ export interface ProcessOptions {
 
 export interface ProcessResult {
   blob: Blob;
+  /** MIME type of the produced blob (may differ from the requested format if we kept the original). */
+  outputType: string;
+  /** File extension to use when saving this result, including the leading dot. */
+  outputExtension: string;
   width: number;
   height: number;
   originalWidth: number;
   originalHeight: number;
+  originalSize: number;
+  /**
+   * True when re-encoding would have produced a larger file, so the original
+   * bytes were kept instead. Guarantees the output is never bigger than the input.
+   */
+  keptOriginal: boolean;
 }
 
 const IMAGE_MIME_TYPES = [
@@ -59,6 +69,30 @@ function getMimeType(format: OutputFormat): string {
     default:
       return "image/webp";
   }
+}
+
+function extensionForMimeType(mimeType: string): string {
+  switch (mimeType) {
+    case "image/webp":
+      return ".webp";
+    case "image/avif":
+      return ".avif";
+    case "image/jpeg":
+      return ".jpg";
+    case "image/png":
+      return ".png";
+    case "image/gif":
+      return ".gif";
+    default:
+      return ".bin";
+  }
+}
+
+/** Best-effort extension for keeping the original file (preserves its existing extension). */
+function originalExtension(file: File): string {
+  const match = /\.[^.]+$/.exec(file.name);
+  if (match) return match[0].toLowerCase();
+  return extensionForMimeType(file.type);
 }
 
 /**
@@ -116,6 +150,7 @@ export async function processImage(
   bitmap.close();
 
   const mimeType = getMimeType(options.format);
+  let encodedType = mimeType;
   let blob = await canvas.convertToBlob({
     type: mimeType,
     quality: options.quality / 100,
@@ -123,6 +158,7 @@ export async function processImage(
 
   // Fallback: if AVIF fails, try WebP
   if (!blob && options.format === "avif") {
+    encodedType = "image/webp";
     blob = await canvas.convertToBlob({
       type: "image/webp",
       quality: options.quality / 100,
@@ -133,12 +169,36 @@ export async function processImage(
     throw new Error(`Failed to encode image as ${options.format}`);
   }
 
+  const resized = width !== origWidth || height !== origHeight;
+
+  // Guard against the re-encode producing a *larger* file (common at high
+  // quality, or when the source is already efficiently compressed). When we
+  // haven't resized, there is no benefit to a bigger file, so keep the
+  // original bytes and report it as such.
+  if (!resized && blob.size >= file.size) {
+    return {
+      blob: file,
+      outputType: file.type || encodedType,
+      outputExtension: originalExtension(file),
+      width: origWidth,
+      height: origHeight,
+      originalWidth: origWidth,
+      originalHeight: origHeight,
+      originalSize: file.size,
+      keptOriginal: true,
+    };
+  }
+
   return {
     blob,
+    outputType: encodedType,
+    outputExtension: extensionForMimeType(encodedType),
     width,
     height,
     originalWidth: origWidth,
     originalHeight: origHeight,
+    originalSize: file.size,
+    keptOriginal: false,
   };
 }
 
