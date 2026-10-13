@@ -24,7 +24,8 @@ export function getSavings(originalBytes: number, optimizedBytes: number) {
 
 /** Format a savings percentage as a signed label, e.g. "-72%" or "+4%". */
 export function formatPercent(percent: number): string {
-  const rounded = Math.round(percent)
+  // A file that still has bytes never shrank by a full 100%.
+  const rounded = Math.min(Math.round(percent), percent < 100 ? 99 : 100)
   if (rounded === 0) return "0%"
   return rounded > 0 ? `\u2212${rounded}%` : `+${Math.abs(rounded)}%`
 }

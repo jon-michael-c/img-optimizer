@@ -1,176 +1,97 @@
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
+import { IMAGE_ACCEPT, isImageFile } from "@/lib/files";
 import { cn } from "@/lib/utils";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Plus } from "lucide-react";
 
 interface ImageDropzoneProps {
   onFiles: (files: File[]) => void;
-  disabled?: boolean;
-  className?: string;
+  /** "hero" is the large empty-state target; "tile" sits at the end of the grid. */
+  variant?: "hero" | "tile";
+  /** Files are being dragged over the page (drops are handled globally). */
+  dragging?: boolean;
 }
 
 export function ImageDropzone({
   onFiles,
-  disabled,
-  className,
+  variant = "hero",
+  dragging,
 }: ImageDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = useCallback(
-    (files: FileList | File[] | null) => {
-      if (!files) return;
-      const arr = Array.from(files);
-      const imageFiles = arr.filter(
-        (f) =>
-          f.type.startsWith("image/") ||
-          /\.(png|jpg|jpeg|webp|avif|gif)$/i.test(f.name)
-      );
-      if (imageFiles.length > 0) {
-        onFiles(imageFiles);
-      }
-    },
-    [onFiles]
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []).filter(isImageFile);
+    if (files.length > 0) onFiles(files);
+    e.target.value = "";
+  };
+
+  const input = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept={IMAGE_ACCEPT}
+      multiple
+      className="sr-only"
+      tabIndex={-1}
+      aria-hidden
+      onChange={handleChange}
+    />
   );
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (disabled) return;
-      const items = e.dataTransfer?.items;
-      if (items) {
-        const files: File[] = [];
-        for (let i = 0; i < items.length; i++) {
-          const entry = items[i].webkitGetAsEntry?.() ?? items[i];
-          if (typeof (entry as FileSystemEntry).isDirectory === "function") {
-            const dirEntry = entry as FileSystemDirectoryEntry;
-            if (dirEntry.isDirectory) {
-              readDirectory(dirEntry, files);
-              continue;
-            }
-          }
-          const file = items[i].getAsFile();
-          if (file) files.push(file);
-        }
-        handleFiles(files);
-      } else {
-        handleFiles(e.dataTransfer?.files ?? []);
-      }
-    },
-    [disabled, handleFiles]
-  );
-
-  const handleDragOver = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!disabled) {
-        e.currentTarget.setAttribute("data-drag", "true");
-      }
-    },
-    [disabled]
-  );
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.currentTarget.removeAttribute("data-drag");
-  }, []);
-
-  const handleClick = useCallback(() => {
-    if (!disabled) inputRef.current?.click();
-  }, [disabled]);
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      handleFiles(e.target.files);
-      e.target.value = "";
-    },
-    [handleFiles]
-  );
+  if (variant === "tile") {
+    return (
+      <>
+        {input}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          data-drag={dragging || undefined}
+          className={cn(
+            "group flex size-full min-h-40 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/25 text-sm font-medium text-muted-foreground transition-colors",
+            "hover:border-brand/50 hover:bg-brand/5 hover:text-foreground",
+            "data-[drag]:border-brand data-[drag]:bg-brand/5 data-[drag]:text-foreground",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          )}
+        >
+          <span className="flex size-10 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-brand/10 group-hover:text-brand group-data-[drag]:bg-brand/10 group-data-[drag]:text-brand">
+            <Plus className="size-5" />
+          </span>
+          Add images
+        </button>
+      </>
+    );
+  }
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={handleClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      className={cn(
-        "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 px-6 py-12 text-center transition-colors",
-        "hover:border-primary/50 hover:bg-muted/50",
-        "data-[drag=true]:border-primary data-[drag=true]:bg-muted/50",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        disabled && "pointer-events-none opacity-50",
-        className
-      )}
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp,image/avif,image/gif,.png,.jpg,.jpeg,.webp,.avif,.gif"
-        multiple
-        className="sr-only"
-        onChange={handleInputChange}
-      />
-      <ImagePlus className="mb-3 size-12 text-muted-foreground" />
-      <p className="mb-1 text-sm font-medium text-foreground">
-        Drop images here or click to browse
-      </p>
-      <p className="text-xs text-muted-foreground">
-        PNG, JPG, WebP, AVIF, GIF • Folders supported
-      </p>
-    </div>
+    <>
+      {input}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        data-drag={dragging || undefined}
+        className={cn(
+          "group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-muted-foreground/25 bg-card/60 px-6 py-14 text-center transition-all duration-300 sm:py-20",
+          "hover:border-brand/50 hover:bg-brand/5",
+          "data-[drag]:scale-[1.01] data-[drag]:border-brand data-[drag]:bg-brand/5",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        )}
+      >
+        <span className="pointer-events-none absolute -top-20 left-1/2 size-64 -translate-x-1/2 rounded-full bg-gradient-brand opacity-10 blur-3xl transition-opacity duration-500 group-hover:opacity-20 group-data-[drag]:opacity-30" />
+        <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-gradient-brand text-white shadow-lg shadow-brand/30 transition-transform duration-300 group-hover:-translate-y-1 group-data-[drag]:scale-110">
+          <ImagePlus className="size-8" />
+        </span>
+        <span className="relative block text-base font-semibold">
+          Drop images here
+        </span>
+        <span className="relative mt-1 block text-sm text-muted-foreground">
+          or{" "}
+          <span className="text-gradient-brand font-semibold">
+            browse your files
+          </span>
+        </span>
+        <span className="relative mt-5 block text-xs text-muted-foreground">
+          PNG, JPG, WebP, AVIF, GIF &middot; folders and paste work too
+        </span>
+      </button>
+    </>
   );
-}
-
-async function readDirectory(
-  dir: FileSystemDirectoryEntry,
-  out: File[]
-): Promise<void> {
-  const reader = dir.createReader();
-  const read = (): Promise<void> =>
-    new Promise((resolve, reject) => {
-      reader.readEntries(
-        (entries) => {
-          if (entries.length === 0) {
-            resolve();
-            return;
-          }
-          Promise.all(
-            entries.map((entry) => {
-              if (entry.isFile) {
-                return new Promise<void>((res, rej) => {
-                  (entry as FileSystemFileEntry).file(
-                    (file) => {
-                      if (
-                        file.type.startsWith("image/") ||
-                        /\.(png|jpg|jpeg|webp|avif|gif)$/i.test(file.name)
-                      ) {
-                        out.push(file);
-                      }
-                      res();
-                    },
-                    (err) => rej(err)
-                  );
-                });
-              }
-              if (entry.isDirectory) {
-                return readDirectory(entry as FileSystemDirectoryEntry, out);
-              }
-              return Promise.resolve();
-            })
-          )
-            .then(() => read())
-            .then(resolve)
-            .catch(reject);
-        },
-        (err) => reject(err)
-      );
-    });
-  await read();
 }

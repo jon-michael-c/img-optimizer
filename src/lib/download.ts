@@ -1,14 +1,20 @@
-import { saveAs } from "file-saver";
-import JSZip from "jszip";
-
 export interface ProcessedImage {
   file: File;
   blob: Blob;
   outputExtension: string;
-  width: number;
-  height: number;
-  originalWidth: number;
-  originalHeight: number;
+}
+
+/** Save a blob through a temporary download link. */
+export function saveBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  // Revoking immediately can abort the download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
 /**
@@ -20,8 +26,7 @@ export function downloadSingle(
   outputExtension: string
 ): void {
   const baseName = originalFileName.replace(/\.[^.]+$/, "");
-  const fileName = `${baseName}${outputExtension}`;
-  saveAs(blob, fileName);
+  saveBlob(blob, `${baseName}${outputExtension}`);
 }
 
 /**
@@ -32,6 +37,7 @@ export async function downloadAsZip(
   images: ProcessedImage[],
   zipFileName = "optimized-images.zip"
 ): Promise<void> {
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   const usedNames = new Set<string>();
 
@@ -48,5 +54,5 @@ export async function downloadAsZip(
   }
 
   const content = await zip.generateAsync({ type: "blob" });
-  saveAs(content, zipFileName);
+  saveBlob(content, zipFileName);
 }

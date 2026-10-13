@@ -1,135 +1,180 @@
+import { useEffect, useRef } from "react";
+import { ActionBar } from "@/components/action-bar";
+import { DropOverlay } from "@/components/drop-overlay";
 import { Header } from "@/components/header";
 import { ImageDropzone } from "@/components/image-dropzone";
 import { ImageGrid } from "@/components/image-grid";
 import { SettingsPanel } from "@/components/settings-panel";
-import { StatsBar } from "@/components/stats-bar";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useFileIntake } from "@/hooks/use-file-intake";
 import { useImageOptimizer } from "@/hooks/use-image-optimizer";
-import { downloadAsZip } from "@/lib/download";
+import { downloadAsZip, downloadSingle } from "@/lib/download";
+import { formatBytes } from "@/lib/utils";
 import { toast } from "sonner";
-import { Zap, Download, Trash2, Loader2 } from "lucide-react";
+import { Layers, ShieldCheck, WifiOff } from "lucide-react";
 
 function App() {
   const {
     items,
     options,
     setOptions,
+    alwaysConvert,
+    setAlwaysConvert,
     addFiles,
     removeItem,
     clearAll,
-    processAll,
+    cancel,
+    optimizeOne,
+    processPending,
+    reoptimizeStale,
+    applyEditResult,
+    setPreferConverted,
     isProcessing,
-    progress,
-    processedImages,
+    batch,
+    counts,
+    outputs,
     stats,
-    hasPending,
-    hasProcessed,
+    formatSupport,
   } = useImageOptimizer();
 
-  const handleDownloadZip = async () => {
-    if (processedImages.length === 0) {
-      toast.error("No images to download");
+  const dragging = useFileIntake(addFiles);
+
+  // Failures already present when a run starts, so only new ones are reported.
+  const run = useRef<{ failedBefore: number } | null>(null);
+  useEffect(() => {
+    if (isProcessing) {
+      run.current ??= { failedBefore: counts.failed };
       return;
     }
-    try {
-      await downloadAsZip(processedImages);
-      toast.success(`Downloaded ${processedImages.length} image(s) as ZIP`);
-    } catch {
-      toast.error("Failed to create ZIP");
+    if (!run.current) return;
+    const { failedBefore } = run.current;
+    run.current = null;
+    if (items.length === 0 || counts.pending > 0) return;
+
+    const failed = counts.failed - failedBefore;
+    if (failed > 0) {
+      toast.error(
+        `${failed} image${failed !== 1 ? "s" : ""} couldn't be optimized`
+      );
+    } else if (stats.saved > 0) {
+      toast.success(`Saved ${formatBytes(stats.saved)}`, {
+        description: `${Math.min(99, Math.round(stats.percent))}% smaller across ${stats.count} image${stats.count !== 1 ? "s" : ""}`,
+      });
+    } else {
+      toast.success("All done", {
+        description: "These images were already well optimized.",
+      });
     }
+  }, [isProcessing, items.length, counts.pending, counts.failed, stats]);
+
+  const handleCancel = () => {
+    run.current = null;
+    cancel();
+    toast.info("Optimization stopped");
   };
 
-  const handleProcessAll = async () => {
-    if (!hasPending) {
-      toast.info("No pending images to process");
+  const handleClear = () => {
+    run.current = null;
+    clearAll();
+  };
+
+  const handleDownload = () => {
+    if (outputs.length === 1) {
+      const [only] = outputs;
+      downloadSingle(only.blob, only.file.name, only.outputExtension);
       return;
     }
-    await processAll();
-    toast.success("Optimization complete");
+    toast.promise(downloadAsZip(outputs), {
+      loading: `Zipping ${outputs.length} images\u2026`,
+      success: `Downloaded ${outputs.length} images as ZIP`,
+      error: "Failed to create ZIP",
+    });
   };
 
-  const pendingCount = items.filter((i) => i.status === "pending").length;
+  const settings = (
+    <SettingsPanel
+      options={options}
+      onChange={setOptions}
+      alwaysConvert={alwaysConvert}
+      onAlwaysConvertChange={setAlwaysConvert}
+      formatSupport={formatSupport}
+    />
+  );
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex min-h-svh flex-col">
+      <div className="relative flex min-h-svh flex-col">
+        {/* Decorative background */}
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute -top-40 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-brand/5 blur-3xl" />
+          <div className="absolute -right-40 top-1/3 size-[30rem] rounded-full bg-brand-2/5 blur-3xl" />
+        </div>
+
         <Header />
-        <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-6">
-          <SettingsPanel
-            options={options}
-            onChange={setOptions}
-            disabled={isProcessing}
-          />
-
-          <ImageDropzone
-            onFiles={(files) => addFiles(files)}
-            disabled={isProcessing}
-          />
-
-          {items.length > 0 && (
-            <div className="space-y-5">
-              <StatsBar {...stats} />
-
-              {/* Action bar */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">
-                    {items.length}
-                  </span>{" "}
-                  image{items.length !== 1 ? "s" : ""}
-                  {pendingCount > 0 && ` \u00b7 ${pendingCount} pending`}
+        <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-6 sm:py-8">
+          {items.length === 0 ? (
+            <>
+              <div className="mx-auto max-w-2xl space-y-3 pt-2 text-center sm:pt-6">
+                <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+                  Smaller images,{" "}
+                  <span className="text-gradient-brand">same quality</span>
+                </h2>
+                <p className="text-balance text-muted-foreground">
+                  Compress and convert to WebP, AVIF or JPEG in seconds. Drop
+                  your images and they&rsquo;re optimized right away.
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={handleProcessAll}
-                    disabled={!hasPending || isProcessing}
-                  >
-                    {isProcessing ? (
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                    ) : (
-                      <Zap className="mr-2 size-4" />
-                    )}
-                    {isProcessing ? "Optimizing\u2026" : "Optimize all"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleDownloadZip}
-                    disabled={!hasProcessed || isProcessing}
-                  >
-                    <Download className="mr-2 size-4" />
-                    Download ZIP
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={clearAll}
-                    disabled={isProcessing}
-                  >
-                    <Trash2 className="mr-2 size-4" />
-                    Clear
-                  </Button>
-                </div>
               </div>
-
-              {isProcessing && progress.total > 0 && (
-                <div className="space-y-1.5">
-                  <Progress
-                    value={(progress.current / progress.total) * 100}
-                    className="h-2"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Optimizing {Math.min(progress.current + 1, progress.total)}{" "}
-                    of {progress.total}
-                  </p>
-                </div>
-              )}
-
-              <ImageGrid items={items} onRemove={removeItem} />
-            </div>
+              <ImageDropzone onFiles={addFiles} dragging={dragging} />
+              {settings}
+              <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+                <li className="flex items-center gap-1.5">
+                  <ShieldCheck className="size-3.5 text-brand" />
+                  Private: nothing is uploaded
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <WifiOff className="size-3.5 text-brand" />
+                  Works offline
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Layers className="size-3.5 text-brand" />
+                  Batch &amp; ZIP download
+                </li>
+              </ul>
+            </>
+          ) : (
+            <>
+              {settings}
+              <ImageGrid
+                items={items}
+                options={options}
+                alwaysConvert={alwaysConvert}
+                dragging={dragging}
+                formatSupport={formatSupport}
+                onAddFiles={addFiles}
+                onRemove={removeItem}
+                onOptimize={optimizeOne}
+                onApplyEdit={applyEditResult}
+                onPreferConverted={setPreferConverted}
+              />
+            </>
           )}
         </main>
+
+        {items.length > 0 && (
+          <ActionBar
+            itemCount={items.length}
+            isProcessing={isProcessing}
+            batch={batch}
+            counts={counts}
+            stats={stats}
+            onCancel={handleCancel}
+            onProcessPending={processPending}
+            onReoptimize={reoptimizeStale}
+            onDownload={handleDownload}
+            onClear={handleClear}
+          />
+        )}
 
         <footer className="border-t py-4">
           <p className="mx-auto max-w-6xl px-4 text-center text-xs text-muted-foreground">
@@ -138,7 +183,8 @@ function App() {
           </p>
         </footer>
       </div>
-      <Toaster />
+      <DropOverlay visible={dragging} />
+      <Toaster position="top-center" />
     </TooltipProvider>
   );
 }

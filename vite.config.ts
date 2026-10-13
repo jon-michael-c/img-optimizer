@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icons/*.svg'],
+      includeAssets: ['icons/*.svg'],
       manifest: {
         name: 'Image Optimizer',
         short_name: 'Image Optimizer',
@@ -36,9 +36,26 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // WASM codecs are only needed on browsers without native encoders, so cache on first use.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.endsWith('.wasm'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'wasm-codecs',
+              expiration: { maxEntries: 8 },
+            },
+          },
+        ],
       },
     }),
   ],
+  worker: {
+    format: 'es',
+  },
+  optimizeDeps: {
+    exclude: ['@jsquash/avif', '@jsquash/webp'],
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

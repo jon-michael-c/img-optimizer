@@ -19,11 +19,14 @@ export function Header() {
     <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="relative flex size-9 items-center justify-center rounded-lg bg-gradient-brand text-white shadow-sm shadow-brand/30">
             <Zap className="size-5" />
+            <span className="absolute inset-0 rounded-lg bg-gradient-brand opacity-0 blur-md transition-opacity duration-500 hover:opacity-60" />
           </div>
           <div className="leading-tight">
-            <h1 className="text-base font-semibold">Image Optimizer</h1>
+            <h1 className="text-base font-semibold tracking-tight">
+              Image <span className="text-gradient-brand">Optimizer</span>
+            </h1>
             <p className="hidden text-xs text-muted-foreground sm:block">
               Compress &amp; convert images privately in your browser
             </p>
