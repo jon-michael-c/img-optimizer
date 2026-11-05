@@ -64,7 +64,7 @@ export const ImageCard = memo(function ImageCard({
           : null;
 
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/5">
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border bg-card transition-colors duration-100 hover:border-brand/40">
       <div className="relative aspect-square w-full overflow-hidden bg-muted">
         <button
           type="button"
@@ -79,9 +79,9 @@ export const ImageCard = memo(function ImageCard({
             decoding="async"
             draggable={false}
             className={cn(
-              "size-full object-cover transition-all duration-500",
+              "size-full object-cover transition-all duration-150",
               status === "processing"
-                ? "scale-105 blur-[2px] brightness-75"
+                ? "brightness-75"
                 : "group-hover:scale-[1.04]",
               (status === "queued" || status === "pending") && "opacity-80"
             )}
@@ -90,16 +90,14 @@ export const ImageCard = memo(function ImageCard({
 
         {status === "processing" && (
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            {/* Sweeping scan beam */}
-            <div className="absolute inset-y-0 left-0 w-1/2 animate-scan-beam bg-gradient-to-r from-transparent via-white/70 to-transparent mix-blend-overlay" />
-            {/* Tinted brand scrim */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-brand/40 via-transparent to-brand-2/30" />
+            {/* Brand scrim */}
+            <div className="absolute inset-0 bg-brand/25" />
             {/* Pulsing core */}
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
               <span className="relative flex size-12 items-center justify-center">
                 <span className="absolute inline-flex size-12 rounded-full bg-white/40 [animation:pulse-ring_1.6s_ease-out_infinite]" />
                 <span className="absolute inline-flex size-12 rounded-full bg-white/30 [animation:pulse-ring_1.6s_ease-out_infinite_0.5s]" />
-                <span className="relative flex size-10 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur">
+                <span className="relative flex size-10 items-center justify-center rounded-full bg-white/90">
                   <Zap className="size-5 animate-pulse text-brand" />
                 </span>
               </span>
@@ -111,7 +109,7 @@ export const ImageCard = memo(function ImageCard({
         )}
 
         {status === "error" && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-destructive/15 backdrop-blur-[1px]">
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-destructive/15">
             <AlertCircle className="size-7 text-destructive" />
             <span className="text-xs font-medium text-destructive">Failed</span>
           </div>
@@ -264,7 +262,7 @@ function CardAction({
         <Button
           variant="secondary"
           size="icon"
-          className="size-7 rounded-full bg-background/90 shadow-sm backdrop-blur hover:bg-background"
+          className="size-7 rounded-full bg-background/90 hover:bg-background"
           onClick={onClick}
           aria-label={label}
         >

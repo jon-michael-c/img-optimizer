@@ -275,7 +275,7 @@ export function ImageEditor({
         className="flex max-h-[92vh] w-[96vw] max-w-[96vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(96vw,72rem)]"
       >
         <DialogHeader className="flex-row items-center gap-3 border-b px-5 py-3.5 space-y-0">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-brand text-white">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand text-white">
             <ImageIcon className="size-4" />
           </div>
           <DialogTitle
@@ -398,10 +398,10 @@ export function ImageEditor({
                           <GripVertical className="size-4 text-primary" />
                         </div>
                       </div>
-                      <span className="absolute left-2 top-2 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur">
+                      <span className="absolute left-2 top-2 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
                         Original
                       </span>
-                      <span className="absolute right-2 top-2 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur">
+                      <span className="absolute right-2 top-2 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
                         Edited
                       </span>
                     </>
@@ -676,7 +676,7 @@ export function ImageEditor({
             </Button>
             <Button
               size="sm"
-              className="bg-gradient-brand text-white hover:opacity-95"
+              className="bg-brand text-white hover:opacity-90"
               onClick={handleApply}
             >
               <Check className="mr-2 size-4" /> Apply

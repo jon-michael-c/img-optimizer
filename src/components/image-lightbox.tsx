@@ -158,10 +158,10 @@ export function ImageLightbox({
                     className="size-full object-contain"
                   />
                 </div>
-                <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur">
+                <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
                   Original
                 </span>
-                <span className="pointer-events-none absolute right-2 top-2 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur">
+                <span className="pointer-events-none absolute right-2 top-2 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
                   {extensionLabel(compared.extension)}
                 </span>
                 <div

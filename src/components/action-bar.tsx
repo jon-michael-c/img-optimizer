@@ -57,7 +57,7 @@ export function ActionBar({
     <div
       role="region"
       aria-label="Batch actions"
-      className="sticky bottom-0 z-30 border-t bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-md supports-[backdrop-filter]:bg-background/65"
+      className="sticky bottom-0 z-30 border-t bg-background pb-[env(safe-area-inset-bottom)]"
     >
       {isProcessing && (
         <div
@@ -69,7 +69,7 @@ export function ActionBar({
           className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-muted"
         >
           <div
-            className="animate-gradient-pan h-full bg-gradient-brand transition-[width] duration-300 ease-out"
+            className="h-full bg-brand transition-[width] duration-150 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -135,7 +135,7 @@ export function ActionBar({
             size="sm"
             onClick={onDownload}
             disabled={isProcessing || stats.count === 0}
-            className="bg-gradient-brand text-white shadow-sm shadow-brand/30 hover:opacity-95"
+            className="bg-brand text-white hover:opacity-90"
           >
             <Download />
             {stats.count === 1 ? "Download" : "Download ZIP"}

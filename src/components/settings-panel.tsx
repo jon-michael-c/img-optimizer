@@ -151,7 +151,7 @@ export function SettingsPanel({
                   "rounded-md px-4 py-1.5 text-sm font-semibold transition-all",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   selected
-                    ? "bg-gradient-brand text-white shadow-sm"
+                    ? "bg-brand text-white"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
               >
@@ -204,7 +204,7 @@ export function SettingsPanel({
       <div
         id="advanced-settings"
         className={cn(
-          "grid transition-[grid-template-rows] duration-300 ease-out",
+          "grid transition-[grid-template-rows] duration-150 ease-out",
           advancedOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         )}
       >

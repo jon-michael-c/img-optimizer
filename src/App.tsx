@@ -105,11 +105,6 @@ function App() {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="relative flex min-h-svh flex-col">
-        {/* Decorative background */}
-        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-40 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-brand/5 blur-3xl" />
-          <div className="absolute -right-40 top-1/3 size-[30rem] rounded-full bg-brand-2/5 blur-3xl" />
-        </div>
 
         <Header />
         <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-6 sm:py-8">
@@ -118,7 +113,7 @@ function App() {
               <div className="mx-auto max-w-2xl space-y-3 pt-2 text-center sm:pt-6">
                 <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
                   Smaller images,{" "}
-                  <span className="text-gradient-brand">same quality</span>
+                  <span className="text-brand">same quality</span>
                 </h2>
                 <p className="text-balance text-muted-foreground">
                   Compress and convert to WebP, AVIF or JPEG in seconds. Drop

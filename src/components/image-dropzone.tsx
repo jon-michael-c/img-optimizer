@@ -69,14 +69,13 @@ export function ImageDropzone({
         onClick={() => inputRef.current?.click()}
         data-drag={dragging || undefined}
         className={cn(
-          "group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-muted-foreground/25 bg-card/60 px-6 py-14 text-center transition-all duration-300 sm:py-20",
+          "group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-muted-foreground/25 bg-card/60 px-6 py-14 text-center transition-colors duration-150 sm:py-20",
           "hover:border-brand/50 hover:bg-brand/5",
           "data-[drag]:scale-[1.01] data-[drag]:border-brand data-[drag]:bg-brand/5",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         )}
       >
-        <span className="pointer-events-none absolute -top-20 left-1/2 size-64 -translate-x-1/2 rounded-full bg-gradient-brand opacity-10 blur-3xl transition-opacity duration-500 group-hover:opacity-20 group-data-[drag]:opacity-30" />
-        <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-gradient-brand text-white shadow-lg shadow-brand/30 transition-transform duration-300 group-hover:-translate-y-1 group-data-[drag]:scale-110">
+        <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-brand text-white transition-transform duration-150 group-hover:-translate-y-0.5 group-data-[drag]:scale-105">
           <ImagePlus className="size-8" />
         </span>
         <span className="relative block text-base font-semibold">
@@ -84,7 +83,7 @@ export function ImageDropzone({
         </span>
         <span className="relative mt-1 block text-sm text-muted-foreground">
           or{" "}
-          <span className="text-gradient-brand font-semibold">
+          <span className="text-brand font-semibold">
             browse your files
           </span>
         </span>
