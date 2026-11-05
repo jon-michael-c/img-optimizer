@@ -1,43 +1,35 @@
-# Image Optimizer PWA
+# Image Optimizer
 
-A client-side Progressive Web App for optimizing images. Convert PNG, JPG, WebP, and other formats to WebP, AVIF, or JPEG with configurable quality and resizing.
+Compress, resize and convert images to **WebP**, **AVIF** or **JPEG** right in your browser. Nothing is uploaded, and it installs as a PWA that works offline.
 
 ## Features
 
-- **Drag-and-drop** or click to add images (folders supported)
-- **Output formats**: WebP, AVIF, JPEG
-- **Quality slider**: 1–100%
-- **Max dimension**: Resize images larger than N px (0 = no resize)
-- **Bulk processing** with progress indicator
-- **ZIP download** for multiple optimized images
-- **PWA**: Installable, works offline
-- **Dark mode** with system preference support
+- **Drop, browse or paste** images, whole folders included. They're optimized as soon as they're added.
+- **Presets** (Balanced, Smallest, High quality), or set format, quality and max dimension yourself.
+- **Smart fallback**: if converting would make an image bigger (and it isn't resized), the original is kept. Override per image or with *Always convert*.
+- **Before/after slider** to compare quality.
+- **Per-image editor**: resize, rotate, flip, brightness/contrast/saturation, PNG export.
+- **Download** one image or all of them as a ZIP.
+- **Fast and non-blocking**: images are processed in parallel Web Workers.
 
-## Tech Stack
-
-- React 19 + TypeScript
-- Vite
-- Tailwind CSS v4
-- shadcn/ui
-- Bun
+Accepts PNG, JPEG, WebP, AVIF and GIF (first frame only). Settings and theme are remembered.
 
 ## Development
 
+Requires [Bun](https://bun.sh).
+
 ```bash
 bun install
-bun run dev
+bun run dev       # http://localhost:5173
+bun run lint
+bun run build     # type-check + production build to dist/
+bun run preview   # serve dist/ (the service worker only runs here)
 ```
 
-## Build
+## How it works
 
-```bash
-bun run build
-bun run preview   # Preview production build
-```
+Each image is decoded with `createImageBitmap`, scaled on an `OffscreenCanvas` and encoded in a pool of up to 4 Web Workers. The browser's built-in encoder is used when it supports the format; otherwise a [jSquash](https://github.com/jamsinclair/jSquash) WebAssembly encoder is loaded on demand (e.g. AVIF in Chrome) and cached for offline use.
 
-## Usage
+**Stack:** React 19, TypeScript, Vite 7, Tailwind CSS 4, shadcn/ui, vite-plugin-pwa, jSquash, JSZip.
 
-1. Add images via drag-and-drop or file picker
-2. Configure output format, quality, and max dimension
-3. Click "Optimize All"
-4. Download individual images or the full ZIP
+Architecture and contributor notes: [AGENTS.md](AGENTS.md).
