@@ -33,3 +33,7 @@ Each image is decoded with `createImageBitmap`, scaled on an `OffscreenCanvas` a
 **Stack:** React 19, TypeScript, Vite 7, Tailwind CSS 4, shadcn/ui, vite-plugin-pwa, jSquash, JSZip.
 
 Architecture and contributor notes: [AGENTS.md](AGENTS.md).
+
+## License
+
+Licensed under the [MIT License](LICENSE).
